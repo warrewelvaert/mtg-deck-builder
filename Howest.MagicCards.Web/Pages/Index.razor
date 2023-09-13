@@ -1,0 +1,127 @@
+﻿@using Howest.MagicCards.Shared.DTO;
+@using Howest.MagicCards.Web.Pages;
+@using Howest.MagicCards.DAL.Repositories;
+
+@inject HttpClient WebApiClient
+@inject HttpClient MinimalApiClient
+
+@page "/"
+
+<PageTitle>Magic The Gathering Deck Builder</PageTitle>
+
+<h1>Magic The Gathering Deck Builder</h1>
+
+<Deck @ref="_deckComponent"/>
+
+<section id="filter-cards">
+    <div class="filter-body">
+        <div class="row">
+            <div class="filter-item">
+                <label for="filter-name">Card Name</label>
+                <input type="text" @bind-value="@_nameFilter" placeholder="Search for a card name" />
+            </div>
+            <div class="filter-item">
+                <label for="filter-text">Card Text</label>
+                <input id="filter-text" @bind-value="@_textFilter" placeholder="Search for a card text" />
+            </div>
+            <div class="filter-item">
+                <label for="filter-set">Card Set</label>
+                <input id="filter-set" @bind-value="@_setFilter" placeholder="Search for a set" />
+            </div>
+        </div>
+        <div class="row">
+            <div class="filter-item">
+                <label for="filter-artist">Card Artist</label>
+                <input id="filter-artist" @bind-value="@_artistFilter" placeholder="Search for an artist" />
+            </div>
+            <div class="filter-item">
+                <label for="filter-rarity">Card Rarity</label>
+                <select @bind="@_rarityFilter" id="filter-rarity">
+                    <option selected disabled value="">Select a rarity</option>
+                    <option value="">All</option>
+                    <option value="common">Common</option>
+                    <option value="uncommon">Uncommon</option>
+                    <option value="rare">Rare</option>
+                    <option value="mythic">Mythic</option>
+                    <option value="special">Special</option>
+                    <option value="bonus">Bonus</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label for="filter-type">Card Type</label>
+                <input id="filter-type" @bind-value="@_typeFilter" placeholder="Search for an Type" />
+            </div>
+        </div>
+        <div class="row">
+            <div class="filter-item">
+                <label for="filter-sort">Sorting Order</label>
+                <select @bind="@_orderFilter" id="filter-sort">
+                    <option selected value="asc">Ascending</option>
+                    <option value="desc">Descending</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label for="filter-page">Page Number</label>
+                <input id="filter-page" @bind-value="@_currentPage" type="number" min="1" max="1000" />
+            </div>
+            <div class="filter-item">
+                <label for="filter-page-size">Maximum Cards Per Page</label>
+                <input id="filter-page-size" @bind-value="@_pageSize" type="number" min="1" max="1000" />
+            </div>
+        </div>
+        <div class="row">
+            <div class="filter-item">
+                <button class="btn btn-primary filter-btn" @onclick="GetCardsAsync">Filter</button>
+            </div>
+        </div>
+    </div>
+</section>
+@if (_allCards == null)
+{
+    <p class="overview-status">Loading...</p>
+}
+else if (_allCards.Count() == 0)
+{
+    <p class="overview-status">No cards found.</p>
+}
+else
+{
+    <section id="cards-overview-container">
+        @foreach (CardReadDTO card in _allCards)
+        {
+            if (card.OriginalImageUrl != null)
+            {
+                <div>
+                    <img src="@card.OriginalImageUrl" alt="@card.Name @card.Id" @onclick="@(() => AddToDeck(card.Id, card.Name, card.ManaCost))">
+                    <p class="card-detail-link" @onclick="@(() => LoadCardDetail(card.Id))">Card Details</p>
+                </div>
+            }
+        }
+    </section>
+}
+<section id="card-detail-overlay" class="@_isDetailVisible">
+    @if (DetailedCard == null)
+    {
+        <p>Loading...</p>
+    }
+    else
+    {
+        <div id="card-detail-container">
+            <img id="card-detail-img" src="@DetailedCard.OriginalImageUrl" />
+            <div id="card-detail-text">
+                <p><bold>Card Name: </bold> @DetailedCard.Name</p>
+                <p><bold>Mana Cost: </bold>@DetailedCard.ManaCost</p>
+                <p><bold>Converted Mana Cost: </bold>@DetailedCard.ConvertedManaCost</p>
+                <p><bold>Types: </bold>@DetailedCard.Type</p>
+                <p><bold>Text: </bold>@DetailedCard.Text</p>
+                <p><bold>Rarity: </bold>@DetailedCard.Rarity</p>
+                <p><bold>Set: </bold>@DetailedCard.Set</p>
+                <p><bold>Card Id: </bold>@DetailedCard.Id</p>
+            </div>
+        </div>
+        <div id="card-detail-buttons">
+            <button class="btn btn-primary" @onclick="@(() => AddToDeck(DetailedCard.Id, DetailedCard.Name, DetailedCard.ManaCost))">Add To Deck</button>
+            <button class="btn btn-primary" @onclick="ToggleDetailScreen">Close Screen</button>
+        </div>
+    }
+</section>

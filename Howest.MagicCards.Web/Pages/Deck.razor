@@ -1,0 +1,66 @@
+﻿@using Howest.MagicCards.Shared.DTO;
+@using Howest.MagicCards.Web.Pages;
+@using Howest.MagicCards.DAL.Repositories;
+
+@inject HttpClient WebApiClient
+@inject HttpClient MinimalApiClient
+
+<div class="side">
+    <h3>Card Deck</h3>
+    <aside id="deck">
+        <div>
+            <select id="deck-select" @oninput="HandleDeckChange" @bind="_currentDeck">
+                <option selected value="-1">New Deck</option>
+                if (allDecks != null)
+                {
+                @foreach (DeckRepository deck in AllDecks)
+                {
+                    <option value="@deck.Id">@deck.Name</option>
+                }
+                }
+            </select>
+            <input type="text" @bind-value="@_deckName" required minlength="4" maxlength="25" />
+        </div>
+        <div id="side-buttons">
+            <button class="btn btn-primary" @onclick="SubmitDeck">Save</button>
+            <button class="btn btn-primary" @onclick="ClearDeck">Clear</button>
+            <button class="btn btn-primary" @onclick="DeleteDeck">Delete</button>
+        </div>
+        <p id="deck-count">@DeckCards.Count() / 60</p>
+        <div id="deck-card-container">
+            @if (DeckCards == null)
+            {
+                <p class="deck-status">Loading...</p>
+            }
+            else if (DeckCards.Count() == 0)
+            {
+                <p class="deck-status">No cards in deck.</p>
+            }
+            else
+            {
+                @foreach (var card in DeckCards.GroupBy(c => new { c.Name, c.ManaCost, c.Id }))
+                {
+                    if (@card.Key.Name != null)
+                    {
+                        string[] symbols = card.Key.ManaCost?.Split(new char[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries);
+                        <div>
+                            <div id="deck-card-count" @onclick="@( () => AddToDeck(card.Key.Id, card.Key.Name, card.Key.ManaCost))"><p>@card.Count()</p></div>
+                            <div class="deck-card" @onclick="@( () => RemoveFromDeck(card.Key.Id))">
+                                <p>@card.Key.Name</p>
+                                <div>
+                                    @if (symbols != null)
+                                    {
+                                        @foreach (string symbol in symbols)
+                                        {
+                                            <img src="@($"https://gatherer.wizards.com/Handlers/Image.ashx?size=medium&name={@symbol}&type=symbol")" />
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            }
+        </div>
+    </aside>
+</div>
